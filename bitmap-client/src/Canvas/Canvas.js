@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import socketio from 'socket.io-client';
 
 class Canvas extends Component {
 	constructor(props) {
@@ -11,6 +12,7 @@ class Canvas extends Component {
 			Y : -1
 		};
 		this.id = this.setId();
+		this.socket = null;
 	}
 	setId() {
 		return btoa('canvas' + (Math.random() * new Date().getTime()));
@@ -23,6 +25,16 @@ class Canvas extends Component {
 		this.canvasRef.current.addEventListener("mouseup",this.finishDraw);
 		//this.canvasRef.current.addEventListener("mouseout",this.finishDraw);
 		this.ctx.strokeStyle = 'rgb(0,0,0)';
+		this.socket = socketio.connect('http://localhost:3001');
+		this.socket.on('drawing', (obj) => {
+			if (obj.id != this.id) {
+				this.ctx.beginPath();
+				this.ctx.moveTo(obj.x0, obj.y0);
+				this.ctx.lineTo(obj.x1, obj.y1);
+				this.ctx.stroke();
+				this.ctx.closePath();
+			}
+		});
 	}
 
 	initDraw = (e) => {
@@ -37,23 +49,26 @@ class Canvas extends Component {
 	
 	draw = (e) => {
 		if (this.state.drawable) {
+			this.ctx.lineTo(e.offsetX, e.offsetY);
+			this.socket.emit('draw', { id : this.id, x0:this.state.X, y0:this.state.Y, x1:e.offsetX, y1:e.offsetY});
 			this.setState({
 				X : e.offsetX,
 				Y : e.offsetY,
 			});
-			this.ctx.lineTo(this.state.X, this.state.Y);
 			this.ctx.stroke();
-			console.log(this.state);
 		}
 	}
 	
 	finishDraw = () => {
+		this.ctx.closePath();
 		this.setState({
 			drawable : false,
 			X : -1,
 			Y : -1
 		});
 	}
+	
+	
 
 	render() {
 		return (

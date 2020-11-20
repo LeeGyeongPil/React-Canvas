@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import Canvas from './Canvas/Canvas';
+import socketio from 'socket.io-client';
 import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
